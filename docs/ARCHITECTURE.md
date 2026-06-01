@@ -475,6 +475,23 @@ if ((millis() - last_packet_time) > 100)
 
 This ensures that even if the release packets are entirely lost, the LEDs will turn off automatically within 100 ms of the last successfully received transmission.
 
+#### 4.6 Independent Watchdog Timer (IWDG) Integration
+
+Both the transmitter and receiver nodes incorporate the Independent Watchdog (IWDG) peripheral to protect against firmware lockups (e.g. from electrical spikes, clock failures, or EMI noise):
+
+* **Clock Source & Prescaling:**
+  - Clock Source: LSI (Low-Speed Internal Oscillator, nominal ~40kHz)
+  - Prescaler: 32 (resulting in a 1.25 kHz watchdog counter clock rate)
+  - Reload Value: 1250
+  - Timeout Period: `1250 / 1250 Hz = 1.0 second`
+* **Transmitter Unit Operation:**
+  - The IWDG is enabled at the end of the initialization sequence (after the 2-second debugger safety delay).
+  - The watchdog is fed at the beginning of each loop iteration (`watchdog_feed()`).
+  - When transitioning to Standby mode, the watchdog is fed one final time. In deep Standby mode, the watchdog is automatically frozen by the chip configuration, preventing reset loop cycles.
+* **Receiver Unit Operation:**
+  - The IWDG is initialized at startup.
+  - The watchdog is fed at the beginning of each iteration of the main `while(1)` polling and bitstream decoding loop, guaranteeing recovery reset within 1 second if processing hangs.
+
 ---
 
 ### 5. RF Signal Encoding
@@ -584,6 +601,7 @@ rf_remote/
 | 1.0 | 2026-06-01 | Initial draft with technical errors |
 | 1.1 | 2026-06-01 | **Corrected** based on architectural review |
 | 1.2 | 2026-06-01 | Incorporated review feedback on communication strategy, state handling, physical layer, and project structure |
+| 1.3 | 2026-06-01 | Added fully enabled Independent Watchdog (IWDG) details for both transmitter and receiver |
 
 ---
 

@@ -98,6 +98,12 @@ The receiver runs a robust non-blocking decoding loop:
 5. **Bit Timeout:** If the gap between bits exceeds **2.5 ms**, the state machine resets. This prevents partial transmissions or noise spikes from causing stuck frames.
 6. **Safety Momentary Timeout:** If no valid packets are received for **100 ms**, a timeout function automatically clears all LED outputs. This prevents the outputs from being stuck "ON" if the transmitter button release packet is lost in transit due to RF collision.
 
+### 3. Independent Watchdog Timer (IWDG) Integration
+To ensure system-wide fault tolerance and defense against hardware lockups (such as unexpected EMI interference, power line glitches, or clock failures), both nodes run the hardware Independent Watchdog (IWDG):
+* **Timeout Period:** Both nodes configure the IWDG with a prescaler of 32 and reload value of 1250. Ticking from the chip's internal Low-Speed Oscillator (LSI ~40kHz), this establishes a ~1.0-second recovery timeout window.
+* **Transmitter Node:** The watchdog is initialized immediately after the 2-second debugger safety delay. It is fed at the start of each button scanning iteration. Before transitioning into deep Standby sleep (WFE), a final watchdog feed is performed. In deep Standby, the watchdog is automatically frozen by the chip's hardware configuration, preventing loop reset cycles.
+* **Receiver Node:** The watchdog is initialized during boot after standard timer/GPIO setups and is fed continuously at the start of the `while (1)` event decoding loop. Any unexpected lockup in bit processing triggers a hardware reset within 1 second.
+
 ---
 
 ## 🔌 Pin Mapping

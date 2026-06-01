@@ -1,5 +1,8 @@
 #include "debug.h"
 #include "protocol.h"
+#include "ch32v00x_iwdg.h"
+
+#define watchdog_feed() IWDG_ReloadCounter()
 
 /* Helper to configure all unused pins as Input Pull-Up to save power */
 static void configure_unused_pins_pullup(void)
@@ -23,6 +26,25 @@ static void configure_unused_pins_pullup(void)
     gpio_init.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;
     gpio_init.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_Init(GPIOD, &gpio_init);
+}
+
+/* Initialize Independent Watchdog Timer */
+static void IWDG_Init_Config(void)
+{
+    // Enable write access to IWDG_PR and IWDG_RLR registers
+    IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);
+    
+    // Set IWDG prescaler to 32 (clock: LSI ~40kHz, 40kHz / 32 = 1.25kHz = 0.8ms per tick)
+    IWDG_SetPrescaler(IWDG_Prescaler_32);
+    
+    // Set reload value to 1250 for a ~1-second timeout (1250 * 0.8ms = 1000ms)
+    IWDG_SetReload(1250);
+    
+    // Reload IWDG counter before enabling
+    IWDG_ReloadCounter();
+    
+    // Enable IWDG
+    IWDG_Enable();
 }
 
 /* Transmit a single byte using software pulse-width modulation */
@@ -86,6 +108,9 @@ int main(void)
     // Enable Power interface clock
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
     
+    // Initialize Watchdog Timer (IWDG)
+    IWDG_Init_Config();
+    
     // Configure all unused pins as IPU for power savings
     configure_unused_pins_pullup();
     
@@ -105,10 +130,13 @@ int main(void)
     GPIO_WriteBit(GPIOC, GPIO_Pin_1, Bit_RESET);
     
     // Wait for the button pin state to settle (debounce initial press)
-    Delay_Ms(15);
+    Delay_Ms(5);
     
     while (1)
     {
+        // Feed the watchdog at the start of each iteration
+        watchdog_feed();
+
         // Buttons are active low. Read GPIOD lower 4 bits and invert.
         uint8_t pin_state = GPIO_ReadInputData(GPIOD) & 0x0F;
         uint8_t buttons = (~pin_state) & 0x0F;
@@ -123,6 +151,7 @@ int main(void)
         }
         else
         {
+            if (buttons == 0) { watchdog_feed(); }
             // All buttons are released:
             // Send release packet (bitmap = 0) 3 times to ensure the receiver clears outputs
             for (int i = 0; i < 3; i++)

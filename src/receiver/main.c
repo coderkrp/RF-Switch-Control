@@ -1,5 +1,8 @@
 #include "debug.h"
 #include "protocol.h"
+#include "ch32v00x_iwdg.h"
+
+#define watchdog_feed() IWDG_ReloadCounter()
 
 /* SysTick-based Millisecond Counter */
 volatile uint32_t ms_ticks = 0;
@@ -73,6 +76,25 @@ typedef enum {
     STATE_RECEIVE_DATA
 } rx_state_t;
 
+/* Initialize Independent Watchdog Timer */
+static void IWDG_Init_Config(void)
+{
+    // Enable write access to IWDG_PR and IWDG_RLR registers
+    IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);
+    
+    // Set IWDG prescaler to 32 (clock: LSI ~40kHz, 40kHz / 32 = 1.25kHz = 0.8ms per tick)
+    IWDG_SetPrescaler(IWDG_Prescaler_32);
+    
+    // Set reload value to 1250 for a ~1-second timeout (1250 * 0.8ms = 1000ms)
+    IWDG_SetReload(1250);
+    
+    // Reload IWDG counter before enabling
+    IWDG_ReloadCounter();
+    
+    // Enable IWDG
+    IWDG_Enable();
+}
+
 int main(void)
 {
     // Standard system clock update and timers init
@@ -83,6 +105,9 @@ int main(void)
     SysTick_Config_1ms();
     TIM2_Init_1M();
     GPIO_Init_Rx();
+    
+    // Initialize Watchdog Timer (IWDG)
+    IWDG_Init_Config();
     
     uint16_t last_transition_time = TIM2->CNT;
     uint16_t high_duration = 0;
@@ -95,9 +120,13 @@ int main(void)
     
     rx_state_t rx_state = STATE_SEARCH_PREAMBLE;
     uint32_t last_packet_time = 0;
+    static uint32_t valid_packets = 0; // Debug packet counter
     
     while (1)
     {
+        // Feed the watchdog at the start of each iteration
+        watchdog_feed();
+
         // 1. Read RF DATA pin (PC1)
         uint8_t pin_state = GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_1);
         
@@ -173,6 +202,7 @@ int main(void)
                                 
                                 if (calc_checksum == checksum && address == RF_ADDRESS)
                                 {
+                                    valid_packets++;
                                     // Valid packet received! Update LED outputs
                                     GPIO_WriteBit(GPIOD, GPIO_Pin_0, (buttons & 0x01) ? Bit_SET : Bit_RESET);
                                     GPIO_WriteBit(GPIOD, GPIO_Pin_1, (buttons & 0x02) ? Bit_SET : Bit_RESET);
