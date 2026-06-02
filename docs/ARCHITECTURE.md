@@ -157,6 +157,27 @@ System (RF Control System)
 | CH32V003F4P6 | PD3 | Output | GPIO | LED 4 (Yellow) - Current limiting resistor required |
 | CH32V003F4P6 | PC1 | Input | GPIO | XY-MK-5V DATA (Receiver) |
 
+#### 2.4 PD1 / SWIO Debugger Conflict
+
+The Single-Wire Interface (SWIO) used for debugging and programming the CH32V003F4P6 is hardwired to pin **PD1**. 
+
+In this default `main` branch configuration, `PD1` is shared with active button and LED GPIO tasks:
+* **Transmitter:** `PD1` functions as Button 2 (Input with internal pull-up).
+* **Receiver:** `PD1` functions as LED 2 (Output driving a Green status LED).
+
+This sharing introduces two primary lockout risks:
+1. **Signal Clash:** Pulling or driving the pin during button presses can interfere with the SWIO programmer's communication logic.
+2. **Standby Sleep Lockout:** When idle, the transmitter enters deep Standby sleep (`WFE`). Standby sleep shuts down internal CPU clocks and disables the SWIO debug module, rendering the chip unreachable to the programmer.
+
+##### Mitigation Mechanism
+At startup, the transmitter executes a reset-source state check:
+1. It queries the `RCC_FLAG_LPWRRST` (Low-Power Reset flag) to determine if it is waking up from Standby sleep.
+2. If it is a standby wakeup (`RCC_FLAG_LPWRRST == SET`), it clears the flag and immediately runs, bypassing the safety delay to achieve low button latency (<15ms).
+3. If it is a fresh power-on or programmer reset (`RCC_FLAG_LPWRRST == RESET`), it enters a **2-second startup safety delay**. This delay keeps the MCU active and its clocks running, giving the WCH-LinkE programmer a 2-second connection window to connect and halt the chip before it enters standby.
+
+##### Alternative Solution
+An alternative hardware configuration that completely avoids pin-sharing on the SWIO pin is available on the `simplified-pins` branch. It migrates all buttons and LEDs to Port C (`PC4-PC7`), keeping `PD1` dedicated exclusively to SWIO.
+
 ---
 
 ### 3. Software Architecture

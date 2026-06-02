@@ -84,7 +84,8 @@ To maximize battery life on the transmitter, the system employs several advanced
 * **Standby Mode via WFE:** When no buttons are pressed, the transmitter configures GPIO Port D Pins 0-3 as external event sources (`EXTI_Mode_Event`) on the falling edge (active low buttons). It then invokes `PWR_EnterSTANDBYMode(PWR_STANDBYEntry_WFE)`.
 * **Zero-Power ASK Idle State:** The FS1000A transmitter is connected directly to PC1. Since ASK (Amplitude Shift Keying) transmits power only when the input line is HIGH, holding PC1 `RESET` (LOW) disables the transmitter's internal oscillator, reducing transmitter power consumption to **0 mA** without requiring a dedicated power-gating MOSFET.
 * **Unused GPIO Stabilization:** All unused GPIO pins are configured with internal pull-ups (`GPIO_Mode_IPU`) to prevent floating gate leakages that drain power.
-* **Instant Wake & Debug Protection:** Standby wakeup acts as a system reset on the CH32V003. To permit in-circuit debugger connections, a standard 2-second startup safety delay is implemented. However, on wake from standby, the MCU detects the Low-Power Reset flag (`RCC_FLAG_LPWRRST`), clears it, and bypasses the safety delay—allowing instant button-press response (<15ms latency).
+* **Instant Wake & Debug Protection (PD1/SWIO Conflict):** On the CH32V003, `PD1` is the dedicated Single-Wire Interface (SWIO) pin used for programming and debugging. However, in this `main` branch, `PD1` is also mapped as a GPIO pin (Button 2 on the transmitter, LED 2 on the receiver). Since the transmitter immediately enters deep Standby sleep (`WFE`) when idle, the internal clocks and SWIO block are shut down, locking out the debugger. 
+  To permit in-circuit debugger connections, a standard 2-second startup safety delay is implemented at boot. The MCU detects the Low-Power Reset flag (`RCC_FLAG_LPWRRST`); if it is a fresh power-on or programmer reset (flag is reset), the MCU waits for 2 seconds to allow the WCH-LinkE debugger to connect. If it is a standby wakeup (flag is set), the MCU clears the flag and immediately runs, bypassing the safety delay to achieve low button latency (<15ms).
 
 ### 2. Receiver Demodulation State Machine
 The receiver runs a robust non-blocking decoding loop:
@@ -103,6 +104,11 @@ To ensure system-wide fault tolerance and defense against hardware lockups (such
 * **Timeout Period:** Both nodes configure the IWDG with a prescaler of 32 and reload value of 1250. Ticking from the chip's internal Low-Speed Oscillator (LSI ~40kHz), this establishes a ~1.0-second recovery timeout window.
 * **Transmitter Node:** The watchdog is initialized immediately after the 2-second debugger safety delay. It is fed at the start of each button scanning iteration. Before transitioning into deep Standby sleep (WFE), a final watchdog feed is performed. In deep Standby, the watchdog is automatically frozen by the chip's hardware configuration, preventing loop reset cycles.
 * **Receiver Node:** The watchdog is initialized during boot after standard timer/GPIO setups and is fed continuously at the start of the `while (1)` event decoding loop. Any unexpected lockup in bit processing triggers a hardware reset within 1 second.
+
+---
+
+> [!IMPORTANT]
+> **PD1 / SWIO Debug Pin Sharing Conflict:** Because `PD1` is shared between Button 2/LED 2 and the debugger interface, there is a risk of programmer lockout. For an alternative hardware wiring scheme that completely resolves this conflict by mapping the buttons and LEDs to `PC4-PC7` and leaving `PD1` dedicated exclusively to SWIO, switch to the `simplified-pins` branch (`git checkout simplified-pins`).
 
 ---
 

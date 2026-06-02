@@ -124,3 +124,21 @@ The XY-MK-5V receiver is a superregenerative receiver which uses an internal ana
 * **Solution:**
   - Place a **10 µF electrolytic or tantalum capacitor** in parallel with a **100 nF ceramic capacitor** directly across the VCC and GND pins of the XY-MK-5V module.
   - If possible, power the XY-MK-5V from a **5.0V regulator** and the CH32V003 from a **3.3V regulator**. The additional voltage level separation and regulator isolation will shield the receiver's front-end from digital switching transients, yielding the maximum possible range.
+
+---
+
+## ⚠️ PD1 / SWIO Debug Conflict (Critical Design Note)
+
+On the CH32V003F4P6 MCU, pin **PD1** functions as the hardware Single-Wire Interface (SWIO) used for flashing and debugging. 
+
+In this default branch (`main`):
+* **Transmitter:** `PD1` is connected to Button 2 (active-low tactile switch).
+* **Receiver:** `PD1` is connected to LED 2 (Green status LED).
+
+### The Conflict & Lockout Risk
+1. **Electrical Conflict:** Actively pressing Button 2 pulls `PD1` to GND, which can disrupt SWIO debug signals if a debug connection is attempted simultaneously.
+2. **Deep Sleep Lockout:** The transmitter enters deep Standby mode (`WFE`) immediately when idle. Standby mode disables the internal clocks and the SWIO debug peripheral, preventing the programmer from connecting.
+
+### Hardware & Software Mitigations
+* **Startup Safety Window:** The software implements a **2-second safety delay** at boot. It scans the RCC reset flags (`RCC_FLAG_LPWRRST`) to determine if the MCU woke up from Standby mode or from a fresh start (power-on or programmer reset). If it is a fresh start, the MCU delays for 2 seconds to allow the WCH-LinkE programmer to connect and halt the chip before it enters standby. On wakeup from standby, this delay is bypassed for instant button responsiveness.
+* **Simplified Pin Mapping Solution (Recommended):** To completely isolate the programming line from the I/O, the hardware pin mapping can be changed to use Port C for buttons and LEDs, freeing up `PD1` to serve exclusively as a debug pin. This alternative design is provided in the **`simplified-pins`** branch.
