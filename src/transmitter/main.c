@@ -89,6 +89,9 @@ static void rf_tx_send_packet(uint8_t address, uint8_t buttons)
 
 int main(void)
 {
+    // Update SystemCoreClock variable to match actual clock configuration (48MHz HSI)
+    SystemCoreClockUpdate();
+
     // Safety delay to prevent debug lock-out:
     // If we woke up from Standby mode (signaled by the RCC Low-Power Reset flag),
     // skip the delay to minimize button press latency.
