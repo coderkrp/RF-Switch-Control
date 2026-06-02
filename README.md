@@ -75,6 +75,22 @@ Data is sent in structured packets of **4 bytes (32 bits)**:
 | **3** | **Button State** | `0x0X` | 4-bit momentary bitmap (Bits 0-3 mapping to buttons 1-4). |
 | **4** | **XOR Checksum** | `0xXX` | Calculated as `Preamble ^ Address ^ Button State` to verify integrity. |
 
+### 3. Protocol Tradeoffs & Comparison (vs. RadioHead/VirtualWire)
+
+This custom PWM-based protocol is designed to address constraints specific to bare-metal microcontrollers (like the CH32V003). Here is a comparison of this project's approach versus the widely used Arduino **RadioHead (`RH_ASK`) / VirtualWire** library:
+
+| Feature / Dimension | Custom PWM Protocol (This Project) | RadioHead (`RH_ASK`) |
+| :--- | :--- | :--- |
+| **Simplicity** | **High:** Simple edge-timing classification, direct bit-shifting, and XOR checksum. No lookup tables or complex algorithms. | **Low:** Requires 4-to-6 bit symbol conversion lookup tables, sub-bit clock sampling (PLL), and 16-bit CRC. |
+| **Memory Footprint** | **Ultra-Low:** Fits in under 2KB of flash and 300 bytes of RAM, leaving headroom on resource-constrained chips. | **Moderate:** Requires library dependencies, buffers, and tables, which increase binary size. |
+| **Noise Immunity** | **Moderate:** Relies on a training byte and timing windows to filter out noise, but susceptible to strong interference. | **Excellent:** Uses a 36-bit preamble to settle AGC and 4-to-6 bit encoding to maintain a constant signal balance (preventing AGC drift). |
+| **Error Detection** | **Basic:** An 8-bit XOR checksum has a 1-in-256 false-positive rate. | **Strong:** A 16-bit CRC (CRC-CCITT) offers a 1-in-65,536 false-positive rate. |
+| **Clock Tolerance** | **Low:** Sensitive to clock frequency errors (requires calibrated delays via `SystemCoreClockUpdate()`). | **High:** Incorporates software clock recovery (PLL) to track and adjust for oscillator drifts. |
+
+**Key Takeaway:**
+* **Use this Custom PWM Protocol** for ultra-cheap, highly resource-constrained microcontrollers (like the CH32V003 with 2KB RAM / 16KB Flash) where execution efficiency, low code size, and low power sleep modes are the primary constraints.
+* **Use RadioHead** for standard microcontrollers (e.g., ATmega328P/Arduino Uno) in environments with heavy RF congestion where maximum noise rejection and high-security packet validation are paramount.
+
 ---
 
 ## ⚡ Low-Power & Reliability Engineering
