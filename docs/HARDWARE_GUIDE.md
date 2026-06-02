@@ -16,10 +16,11 @@ A complete transmitter-receiver pair can be constructed for **under $4.00 USD**,
 | **Tactile Push Buttons** | Momentary switches, through-hole (12x12mm or 6x6mm) | 4 | $0.05 | $0.20 | Generic |
 | **LEDs (Red, Green, Blue, Yellow)** | 5mm T-1 3/4 through-hole indicator LEDs | 4 | $0.05 | $0.20 | Generic |
 | **Metal Film Resistors (220Ω)** | 1/4W 1% LED current-limiting resistors | 4 | $0.01 | $0.04 | Generic |
+| **Resistors (10kΩ)** | 1/4W 5% button pull-up resistors (Transmitter only) | 4 | $0.01 | $0.04 | Generic |
 | **Ceramic Capacitor (100nF)** | 50V decoupling capacitor (0.1µF) | 2 | $0.02 | $0.04 | LCSC |
 | **Electrolytic Capacitor (10µF)** | 16V decoupling capacitor | 2 | $0.03 | $0.06 | LCSC |
 | **Solid Core Copper Wire** | ~17.3 cm length wire for 433MHz antennas | 2 | $0.05 | $0.10 | Generic |
-| **BOM TOTAL** | **Complete System Cost** | - | - | **$3.14** | - |
+| **BOM TOTAL** | **Complete System Cost** | - | - | **$3.18** | - |
 
 ---
 
@@ -47,7 +48,9 @@ The FS1000A and XY-MK-5V modules do not ship with pre-soldered antennas; instead
 
 ## 🔌 Transmitter Wiring Diagram
 
-The transmitter utilizes active-low momentary buttons. Since internal pull-ups are enabled in software on `PC4-PC7`, external pull-up resistors are **not** required.
+The transmitter utilizes active-low momentary buttons. **Crucially, external 10kΩ pull-up resistors are required** on pins `PC4-PC7` to VCC. 
+
+While the software enables internal pull-ups during active execution, these are powered down and disabled when the MCU enters Standby mode. Without external pull-ups, the pins float, drift down, and trigger a falling edge on the EXTI wakeup line, resulting in an infinite reset loop.
 
 ```
                   TRANSMITTER WIRING (3.3V OR 5V POWER)
@@ -58,19 +61,21 @@ The transmitter utilizes active-low momentary buttons. Since internal pull-ups a
                    └───────────┬──────┬────────────┘
          PC4   PC5   PC6   PC7 │      │ PC1
           │     │     │     │  │      │
-          ├──┐  ├──┐  ├──┐  ├──┐      │
-         [B1]  [B2]  [B3]  [B4]       │
-          └──┬  └──┬  └──┬  └──┬      ▼
-             ▼     ▼     ▼     ▼    ┌───────────────┐
-             ───────────────────    │ FS1000A TX    │
-                      │             ├───────────────┤
-                      ▼             │ DATA   [PC1] ◀┘
-                     GND            │ VCC    [VCC] ◀─── VCC (3.3V-5V)
-                                    │ GND    [GND] ◀─── GND
-                                    │ ANT    ──────────▶ 17.3cm Antenna
-                                    └───────────────┘
+          ├──┬──┼──┬──┼──┬──┼──┤      │
+         [R5][B1][R6][B2][R7][B3][R8][B4]   │
+          │  └──┬  │  └──┬  │  └──┬  │  └──┬│
+          │     │  │     │  │     │  │     ││
+          ▼     ▼  ▼     ▼  ▼     ▼  ▼     ▼▼    ┌───────────────┐
+         VCC   GND VCC  GND VCC  GND VCC  GND    │ FS1000A TX    │
+                                                 ├───────────────┤
+                                                 │ DATA   [PC1] ◀┘
+                                                 │ VCC    [VCC] ◀─── VCC (3.3V-5V)
+                                                 │ GND    [GND] ◀─── GND
+                                                 │ ANT    ──────────▶ 17.3cm Antenna
+                                                 └───────────────┘
 
 * Note: B1, B2, B3, B4 are tactile push-buttons connected between GPIO and GND.
+* Note: R5, R6, R7, R8 are external 10kΩ pull-up resistors connected between GPIO and VCC.
 * Note: PD1 is dedicated exclusively as the SWIO programming pin and should be routed to a header.
 ```
 
