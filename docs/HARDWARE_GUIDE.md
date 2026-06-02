@@ -47,7 +47,7 @@ The FS1000A and XY-MK-5V modules do not ship with pre-soldered antennas; instead
 
 ## 🔌 Transmitter Wiring Diagram
 
-The transmitter utilizes active-low momentary buttons. Since internal pull-ups are enabled in software on `PD0-PD3`, external pull-up resistors are **not** required.
+The transmitter utilizes active-low momentary buttons. Since internal pull-ups are enabled in software on `PC4-PC7`, external pull-up resistors are **not** required.
 
 ```
                   TRANSMITTER WIRING (3.3V OR 5V POWER)
@@ -56,7 +56,7 @@ The transmitter utilizes active-low momentary buttons. Since internal pull-ups a
                    │        CH32V003F4P6           │
                    │      Development Board        │
                    └───────────┬──────┬────────────┘
-         PD0   PD1   PD2   PD3 │      │ PC1
+         PC4   PC5   PC6   PC7 │      │ PC1
           │     │     │     │  │      │
           ├──┐  ├──┐  ├──┐  ├──┐      │
          [B1]  [B2]  [B3]  [B4]       │
@@ -71,6 +71,7 @@ The transmitter utilizes active-low momentary buttons. Since internal pull-ups a
                                     └───────────────┘
 
 * Note: B1, B2, B3, B4 are tactile push-buttons connected between GPIO and GND.
+* Note: PD1 is dedicated exclusively as the SWIO programming pin and should be routed to a header.
 ```
 
 ---
@@ -86,7 +87,7 @@ The receiver controls four LEDs. Because the MCU outputs push-pull High logic (~
                    │        CH32V003F4P6           │
                    │      Development Board        │
                    └────┬─────┬─────┬─────┬────┬───┘
-         PD0   PD1   PD2│  PD3│     │     │    │ PC1
+         PC4   PC5   PC6│  PC7│     │     │    │ PC1
           │     │     │ │  │  │     │     │    │
          [R1]  [R2]  [R3]│ [R4]     │     │    │
           ▼     ▼     ▼ ▼  ▼        │     │    ▲
@@ -105,6 +106,7 @@ The receiver controls four LEDs. Because the MCU outputs push-pull High logic (~
 
 * Note: R1-R4 are 220Ω series resistors. LED colors: R=Red, G=Green, B=Blue, Y=Yellow.
 * C1 (10µF) and C2 (0.1µF) should be soldered directly across the VCC and GND pins of the receiver.
+* Note: PD1 is dedicated exclusively as the SWIO programming pin and should be routed to a header.
 ```
 
 ---

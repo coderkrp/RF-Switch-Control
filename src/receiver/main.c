@@ -56,19 +56,27 @@ void GPIO_Init_Rx(void)
     
     GPIO_InitTypeDef gpio_init = {0};
     
-    // Configure LEDs on PD0-PD3 as Output Push-Pull
-    gpio_init.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;
+    // Configure LEDs on PC4-PC7 as Output Push-Pull
+    gpio_init.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;
     gpio_init.GPIO_Mode = GPIO_Mode_Out_PP;
     gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOD, &gpio_init);
+    GPIO_Init(GPIOC, &gpio_init);
     
     // Configure RF DATA pin on PC1 as Input Floating (actively driven by RF receiver)
     gpio_init.GPIO_Pin = GPIO_Pin_1;
     gpio_init.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_Init(GPIOC, &gpio_init);
     
+    // Configure unused GPIOD pins as Input Pull-Up to stabilize them (PD0, PD2-PD6)
+    gpio_init.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6;
+    gpio_init.GPIO_Mode = GPIO_Mode_IPU;
+    GPIO_Init(GPIOD, &gpio_init);
+    
     // Turn off all LEDs initially
-    GPIO_Write(GPIOD, 0x00);
+    GPIO_WriteBit(GPIOC, GPIO_Pin_4, Bit_RESET);
+    GPIO_WriteBit(GPIOC, GPIO_Pin_5, Bit_RESET);
+    GPIO_WriteBit(GPIOC, GPIO_Pin_6, Bit_RESET);
+    GPIO_WriteBit(GPIOC, GPIO_Pin_7, Bit_RESET);
 }
 
 typedef enum {
@@ -203,11 +211,11 @@ int main(void)
                                 if (calc_checksum == checksum && address == RF_ADDRESS)
                                 {
                                     valid_packets++;
-                                    // Valid packet received! Update LED outputs
-                                    GPIO_WriteBit(GPIOD, GPIO_Pin_0, (buttons & 0x01) ? Bit_SET : Bit_RESET);
-                                    GPIO_WriteBit(GPIOD, GPIO_Pin_1, (buttons & 0x02) ? Bit_SET : Bit_RESET);
-                                    GPIO_WriteBit(GPIOD, GPIO_Pin_2, (buttons & 0x04) ? Bit_SET : Bit_RESET);
-                                    GPIO_WriteBit(GPIOD, GPIO_Pin_3, (buttons & 0x08) ? Bit_SET : Bit_RESET);
+                                    // Valid packet received! Update LED outputs on PC4-PC7
+                                    GPIO_WriteBit(GPIOC, GPIO_Pin_4, (buttons & 0x01) ? Bit_SET : Bit_RESET);
+                                    GPIO_WriteBit(GPIOC, GPIO_Pin_5, (buttons & 0x02) ? Bit_SET : Bit_RESET);
+                                    GPIO_WriteBit(GPIOC, GPIO_Pin_6, (buttons & 0x04) ? Bit_SET : Bit_RESET);
+                                    GPIO_WriteBit(GPIOC, GPIO_Pin_7, (buttons & 0x08) ? Bit_SET : Bit_RESET);
                                     
                                     last_packet_time = millis();
                                 }
@@ -243,10 +251,10 @@ int main(void)
         if ((millis() - last_packet_time) > 100)
         {
             // Turn off all LEDs if no packet received within 100ms
-            GPIO_WriteBit(GPIOD, GPIO_Pin_0, Bit_RESET);
-            GPIO_WriteBit(GPIOD, GPIO_Pin_1, Bit_RESET);
-            GPIO_WriteBit(GPIOD, GPIO_Pin_2, Bit_RESET);
-            GPIO_WriteBit(GPIOD, GPIO_Pin_3, Bit_RESET);
+            GPIO_WriteBit(GPIOC, GPIO_Pin_4, Bit_RESET);
+            GPIO_WriteBit(GPIOC, GPIO_Pin_5, Bit_RESET);
+            GPIO_WriteBit(GPIOC, GPIO_Pin_6, Bit_RESET);
+            GPIO_WriteBit(GPIOC, GPIO_Pin_7, Bit_RESET);
         }
     }
 }

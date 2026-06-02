@@ -23,7 +23,7 @@
 │  │  │   Microcontroller │  │                    │  │   Microcontroller │  │ │
 │  │  └─────────┬─────────┘  │                    │  └─────────┬─────────┘  │ │
 │  │            │            │                    │            │            │ │
-│  │  PD0-PD3   │            │                    │  PD0-PD3   │            │ │
+│  │  PC4-PC7   │            │                    │  PC4-PC7   │            │ │
 │  │  │    │    │            │                    │  │    │    │            │ │
 │  │  ▼    ▼    ▼            │                    │  ▼    ▼    ▼            │ │
 │  │  ┌────┐┌────┐┌────┐     │                    │  ┌────┐┌────┐┌────┐     │ │
@@ -34,7 +34,7 @@
 │  │  PC1 ──── RF ───────────▶│                    │◀──────── RF ───────── PC1│ │
 │  │        ▲                │                    │        ▲                │ │
 │  │        │                │                    │        │                │ │
-│  │  PD0-PD3 ──── Buttons ─▶│                    │◀────── Buttons ───────── PD0-│ │
+│  │  PC4-PC7 ──── Buttons ─▶│                    │◀────── LEDs ─────────── PC4-│ │
 │  │                         │                    │                         │ │
 │  └─────────────────────────┘                    └─────────────────────────┘ │
 │                                                                              │
@@ -48,8 +48,8 @@ System (RF Control System)
 ├── Transmitter Unit
 │   ├── CH32V003F4P6 MCU
 │   │   ├── GPIO Subsystem
-│   │   │   ├── Input: PD0-PD3 (Switches)
-│   │   │   └── Output: PD0-PD3 (LEDs - disabled)
+│   │   │   ├── Input: PC4-PC7 (Switches)
+│   │   │   └── Output: PC4-PC7 (LEDs - disabled)
 │   │   └── RF Subsystem
 │   │       ├── FS1000A Module
 │   │       │   └── Data Interface (3-wire: VCC, GND, DATA)
@@ -61,8 +61,8 @@ System (RF Control System)
 ├── Receiver Unit
 │   ├── CH32V003F4P6 MCU
 │   │   ├── GPIO Subsystem
-│   │   │   ├── Input: PD0-PD3 (Buttons)
-│   │   │   └── Output: PD0-PD3 (LEDs)
+│   │   │   ├── Input: PC4-PC7 (Buttons - disabled)
+│   │   │   └── Output: PC4-PC7 (LEDs)
 │   │   └── RF Subsystem
 │   │       ├── XY-MK-5V Module
 │   │       │   └── Signal Detection
@@ -95,14 +95,14 @@ System (RF Control System)
 │         ▼                  ▼                     ▼              │
 │  ┌─────────────┐    ┌─────────────┐    ┌───────────────────┐   │
 │  │ GPIO Input  │    │  GPIO       │    │ RF Interface      │   │
-│  │ PD0-PD3     │    │  PC1        │    │ 3-wire: VCC, GND  │   │
+│  │ PC4-PC7     │    │  PC1        │    │ 3-wire: VCC, GND  │   │
 │  │ (Pull-up)   │    │  DATA OUT   │    │ DATA IN            │   │
 │  └─────────────┘    └──────┬──────┘    └─────────┬─────────┘   │
 │                            │                     │              │
 │                            ▼                     ▼              │
 │                   ┌─────────────┐    ┌───────────────────┐     │
 │                   │ GPIO Output │    │ External EN       │     │
-│                   │ PD0-PD3     │    │ Transistor/MOSFET │     │
+│                   │ PC4-PC7     │    │ Transistor/MOSFET │     │
 │                   │ (Disabled)  │    │ for Power Save    │     │
 │                   └─────────────┘    └───────────────────┘     │
 │                                                                  │
@@ -124,16 +124,16 @@ System (RF Control System)
 │         ▼                  ▼                     ▼              │
 │  ┌─────────────┐    ┌─────────────┐    ┌───────────────────┐   │
 │  │ RF Signal   │    │ GPIO        │    │ GPIO Output       │   │
-│  │ Detection   │    │ PC1         │    │ PD0-PD3           │   │
+│  │ Detection   │    │ PC1         │    │ PC4-PC7           │   │
 │  └──────┬──────┘    │  DATA IN    │    │ (LED Control)     │   │
 │         │           └──────┬──────┘    └─────────┬─────────┘   │
 │         ▼                 │                     │              │
 │  ┌─────────────┐          │                     │              │
 │  │ GPIO Input  │◄─────────┘                     │              │
-│  │ PD0-PD3     │                              │              │
-│  │ (Buttons)   │                              │              │
-│  └─────────────┘                              │              │
-│                                               │              │
+│  │ PC4-PC7     │                                │              │
+│  │ (Buttons)   │                                │              │
+│  └─────────────┘                                │              │
+│                                                 │              │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -141,21 +141,23 @@ System (RF Control System)
 
 | MCU | Pin | Function | Mode | Notes |
 |-----|-----|----------|------|-------|
-| CH32V003F4P6 | PD0 | Input | GPIO | Button 1 (with internal pull-up) |
-| CH32V003F4P6 | PD1 | Input | GPIO | Button 2 (with internal pull-up) |
-| CH32V003F4P6 | PD2 | Input | GPIO | Button 3 (with internal pull-up) |
-| CH32V003F4P6 | PD3 | Input | GPIO | Button 4 (with internal pull-up) |
+| CH32V003F4P6 | PC4 | Input | GPIO | Button 1 (with internal pull-up) |
+| CH32V003F4P6 | PC5 | Input | GPIO | Button 2 (with internal pull-up) |
+| CH32V003F4P6 | PC6 | Input | GPIO | Button 3 (with internal pull-up) |
+| CH32V003F4P6 | PC7 | Input | GPIO | Button 4 (with internal pull-up) |
 | CH32V003F4P6 | PC1 | Output | GPIO | FS1000A DATA (Transmitter) |
+| CH32V003F4P6 | PD1 | I/O | SWIO | Dedicated SWIO Programming Pin |
 
 #### 2.3 Receiver Pin Assignment Table
 
 | MCU | Pin | Function | Mode | Notes |
 |-----|-----|----------|------|-------|
-| CH32V003F4P6 | PD0 | Output | GPIO | LED 1 (Red) - Current limiting resistor required |
-| CH32V003F4P6 | PD1 | Output | GPIO | LED 2 (Green) - Current limiting resistor required |
-| CH32V003F4P6 | PD2 | Output | GPIO | LED 3 (Blue) - Current limiting resistor required |
-| CH32V003F4P6 | PD3 | Output | GPIO | LED 4 (Yellow) - Current limiting resistor required |
+| CH32V003F4P6 | PC4 | Output | GPIO | LED 1 (Red) - Current limiting resistor required |
+| CH32V003F4P6 | PC5 | Output | GPIO | LED 2 (Green) - Current limiting resistor required |
+| CH32V003F4P6 | PC6 | Output | GPIO | LED 3 (Blue) - Current limiting resistor required |
+| CH32V003F4P6 | PC7 | Output | GPIO | LED 4 (Yellow) - Current limiting resistor required |
 | CH32V003F4P6 | PC1 | Input | GPIO | XY-MK-5V DATA (Receiver) |
+| CH32V003F4P6 | PD1 | I/O | SWIO | Dedicated SWIO Programming Pin |
 
 ---
 
@@ -572,7 +574,7 @@ rf_remote/
 | Issue | Original | Corrected |
 |-------|----------|-----------|
 | RF Interface | SPI/UART protocol stack | ASK/OOK (3-wire: VCC, GND, DATA) |
-| Pin Assignments | PA8, PA9 (invalid) | PD0-PD7, PC0-PC5 (valid) |
+| Pin Assignments | PA8, PA9 (invalid) | PD0-PD7, PC0-PC7 (valid) |
 | RF Enable Pin | Built-in EN pin | External transistor/MOSFET required |
 | Packet Size | Large header+address+data | 4 bytes: Preamble + ID + Bitmap + Checksum |
 | State Storage | EEPROM/Flash writes | **None** - momentary control only |

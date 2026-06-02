@@ -45,7 +45,7 @@ Create a reliable, low-cost wireless control system that allows users to operate
 
 | ID    | Requirement          | Priority | Description                                                 |
 | ----- | -------------------- | -------- | ----------------------------------------------------------- |
-| TR-01 | Switch Detection     | Critical | Detect and debounce 4 push switches on **PD0-PD3**          |
+| TR-01 | Switch Detection     | Critical | Detect and debounce 4 push switches on **PC4-PC7**          |
 | TR-02 | RF Transmission      | Critical | Transmit button bitmap packets via FS1000A on **PC1**       |
 | TR-03 | Low Power Operation  | Critical | Sleep while idle and wake on button activity                |
 | TR-04 | Addressing           | Medium   | Support unique device ID (8-bit)                            |
@@ -57,7 +57,7 @@ Create a reliable, low-cost wireless control system that allows users to operate
 | ID    | Requirement       | Priority | Description                                             |
 | ----- | ----------------- | -------- | ------------------------------------------------------- |
 | RX-01 | RF Reception      | Critical | Decode packets received on PC1                          |
-| RX-02 | LED Control       | Critical | Drive LEDs on PD0-PD3                                   |
+| RX-02 | LED Control       | Critical | Drive LEDs on PC4-PC7                                   |
 | RX-03 | Packet Timeout    | Critical | Turn off LEDs if no valid packet received within 100 ms |
 | RX-04 | Address Filtering | High     | Ignore packets from other device IDs                    |
 | RX-05 | Packet Validation | High     | Verify checksum before updating outputs                 |

@@ -22,7 +22,7 @@ The system is split into two independent nodes: the **Transmitter Unit** and the
 │        TRANSMITTER UNIT          │                    │          RECEIVER UNIT          │
 │       [CH32V003F4P6 MCU]         │                    │       [CH32V003F4P6 MCU]        │
 ├──────────────────────────────────┤                    ├─────────────────────────────────┤
-│  PD0-PD3 ──▶ Input (Pull-Up)     │                    │  PD0-PD3 ──▶ Output (Push-Pull) │
+│  PC4-PC7 ──▶ Input (Pull-Up)     │                    │  PC4-PC7 ──▶ Output (Push-Pull) │
 │              [4x Push Buttons]   │                    │              [4x Status LEDs]   │
 │                                  │                    │                                 │
 │  PC1     ──▶ RF DATA OUT        │──── [433 MHz] ────▶│  PC1     ──▶ RF DATA IN         │
@@ -111,20 +111,22 @@ To ensure system-wide fault tolerance and defense against hardware lockups (such
 ### Transmitter Pins (CH32V003F4P6)
 | MCU Pin | Function | Direction | Configuration | Hardware Connection |
 | :---: | :---: | :---: | :---: | :--- |
-| **PD0** | Button 1 | Input | Internal Pull-Up | Tactile Switch (Active Low) |
-| **PD1** | Button 2 | Input | Internal Pull-Up | Tactile Switch (Active Low) |
-| **PD2** | Button 3 | Input | Internal Pull-Up | Tactile Switch (Active Low) |
-| **PD3** | Button 4 | Input | Internal Pull-Up | Tactile Switch (Active Low) |
+| **PC4** | Button 1 | Input | Internal Pull-Up | Tactile Switch (Active Low) |
+| **PC5** | Button 2 | Input | Internal Pull-Up | Tactile Switch (Active Low) |
+| **PC6** | Button 3 | Input | Internal Pull-Up | Tactile Switch (Active Low) |
+| **PC7** | Button 4 | Input | Internal Pull-Up | Tactile Switch (Active Low) |
 | **PC1** | RF DATA | Output | Push-Pull | FS1000A DATA IN |
+| **PD1** | SWIO | I/O | SWIO Debug | Dedicated WCH-LinkE Debug/Flash |
 
 ### Receiver Pins (CH32V003F4P6)
 | MCU Pin | Function | Direction | Configuration | Hardware Connection |
 | :---: | :---: | :---: | :---: | :--- |
-| **PD0** | LED 1 | Output | Push-Pull | Red LED (via Current Limiter) |
-| **PD1** | LED 2 | Output | Push-Pull | Green LED (via Current Limiter) |
-| **PD2** | LED 3 | Output | Push-Pull | Blue LED (via Current Limiter) |
-| **PD3** | LED 4 | Output | Push-Pull | Yellow LED (via Current Limiter) |
+| **PC4** | LED 1 | Output | Push-Pull | Red LED (via Current Limiter) |
+| **PC5** | LED 2 | Output | Push-Pull | Green LED (via Current Limiter) |
+| **PC6** | LED 3 | Output | Push-Pull | Blue LED (via Current Limiter) |
+| **PC7** | LED 4 | Output | Push-Pull | Yellow LED (via Current Limiter) |
 | **PC1** | RF DATA | Input | Floating | XY-MK-5V DATA OUT |
+| **PD1** | SWIO | I/O | SWIO Debug | Dedicated WCH-LinkE Debug/Flash |
 
 ---
 

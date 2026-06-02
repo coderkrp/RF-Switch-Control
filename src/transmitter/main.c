@@ -17,13 +17,13 @@ static void configure_unused_pins_pullup(void)
     gpio_init.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_Init(GPIOA, &gpio_init);
     
-    // GPIOC unused pins: PC0, PC2-PC7 (PC1 is our RF TX pin)
-    gpio_init.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;
+    // GPIOC unused pins: PC0, PC2, PC3 (PC1 is our RF TX pin, PC4-PC7 are buttons)
+    gpio_init.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_2 | GPIO_Pin_3;
     gpio_init.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_Init(GPIOC, &gpio_init);
     
-    // GPIOD unused pins: PD4-PD7 (PD0-PD3 are our buttons)
-    gpio_init.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;
+    // GPIOD unused pins: PD0, PD2-PD6 (PD1 is SWIO, PD7 is NRST)
+    gpio_init.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6;
     gpio_init.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_Init(GPIOD, &gpio_init);
 }
@@ -114,11 +114,11 @@ int main(void)
     // Configure all unused pins as IPU for power savings
     configure_unused_pins_pullup();
     
-    // Configure button pins (PD0 - PD3) as Input with Pull-Up
+    // Configure button pins (PC4 - PC7) as Input with Pull-Up
     GPIO_InitTypeDef gpio_init = {0};
-    gpio_init.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;
+    gpio_init.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;
     gpio_init.GPIO_Mode = GPIO_Mode_IPU;
-    GPIO_Init(GPIOD, &gpio_init);
+    GPIO_Init(GPIOC, &gpio_init);
     
     // Configure RF DATA pin (PC1) as Output Push-Pull
     gpio_init.GPIO_Pin = GPIO_Pin_1;
@@ -137,8 +137,8 @@ int main(void)
         // Feed the watchdog at the start of each iteration
         watchdog_feed();
 
-        // Buttons are active low. Read GPIOD lower 4 bits and invert.
-        uint8_t pin_state = GPIO_ReadInputData(GPIOD) & 0x0F;
+        // Buttons are active low. Read GPIOC pins 4-7, shift right by 4, and invert.
+        uint8_t pin_state = (GPIO_ReadInputData(GPIOC) >> 4) & 0x0F;
         uint8_t buttons = (~pin_state) & 0x0F;
         
         if (buttons != 0)
@@ -163,14 +163,14 @@ int main(void)
             // Ensure DATA pin is low before entering Standby
             GPIO_WriteBit(GPIOC, GPIO_Pin_1, Bit_RESET);
             
-            // Configure EXTI line 0 to 3 for wakeup events on falling edge (button press)
-            GPIO_EXTILineConfig(GPIO_PortSourceGPIOD, GPIO_PinSource0);
-            GPIO_EXTILineConfig(GPIO_PortSourceGPIOD, GPIO_PinSource1);
-            GPIO_EXTILineConfig(GPIO_PortSourceGPIOD, GPIO_PinSource2);
-            GPIO_EXTILineConfig(GPIO_PortSourceGPIOD, GPIO_PinSource3);
+            // Configure EXTI line 4 to 7 for wakeup events on falling edge (button press)
+            GPIO_EXTILineConfig(GPIO_PortSourceGPIOC, GPIO_PinSource4);
+            GPIO_EXTILineConfig(GPIO_PortSourceGPIOC, GPIO_PinSource5);
+            GPIO_EXTILineConfig(GPIO_PortSourceGPIOC, GPIO_PinSource6);
+            GPIO_EXTILineConfig(GPIO_PortSourceGPIOC, GPIO_PinSource7);
             
             EXTI_InitTypeDef exti_init = {0};
-            exti_init.EXTI_Line = EXTI_Line0 | EXTI_Line1 | EXTI_Line2 | EXTI_Line3;
+            exti_init.EXTI_Line = EXTI_Line4 | EXTI_Line5 | EXTI_Line6 | EXTI_Line7;
             exti_init.EXTI_Mode = EXTI_Mode_Event;
             exti_init.EXTI_Trigger = EXTI_Trigger_Falling;
             exti_init.EXTI_LineCmd = ENABLE;
